@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    background: #060810;
+    min-height: 100vh;
+  }
+
+  /* Scrollbar custom */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #1e2d45; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #243352; }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface-1 border border-border rounded-xl;
+  }
+
+  .card-header {
+    @apply flex items-center gap-3 px-4 py-3 border-b border-border bg-surface-2 rounded-t-xl;
+  }
+
+  .btn-primary {
+    @apply bg-accent-green text-surface-0 font-semibold text-sm px-4 py-2 rounded-lg
+           hover:bg-opacity-90 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply bg-accent-red text-white font-semibold text-sm px-4 py-2 rounded-lg
+           hover:bg-opacity-90 transition-all active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply text-text-mid text-sm px-3 py-1.5 rounded-lg border border-border
+           hover:border-border-2 hover:text-text transition-all;
+  }
+
+  .status-dot {
+    @apply w-2 h-2 rounded-full flex-shrink-0;
+  }
+
+  .mono { @apply font-mono text-xs; }
+
+  .label {
+    @apply font-mono text-[10px] uppercase tracking-widest text-text-dim;
+  }
+}

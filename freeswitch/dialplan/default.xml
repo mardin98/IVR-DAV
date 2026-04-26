@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  dialplan/default.xml — Call Manager AI
+  Flujo: Llamada entrante → Agente IA (Orchestrator) → Agente Humano
+-->
+<include>
+  <context name="default">
+
+    <!-- ════════════════════════════════════════════════════════════════
+         EXTENSIÓN AI AGENT — Punto de entrada principal
+         Toda llamada entrante llega aquí primero
+         ════════════════════════════════════════════════════════════════ -->
+    <extension name="ai_agent_inbound">
+      <condition field="destination_number" expression="^(7000|00|\+503\d+)$">
+
+        <!-- Configuración de audio para STT -->
+        <action application="set" data="RECORD_STEREO=false"/>
+        <action application="set" data="media_bug_answer_req=true"/>
+
+        <!-- Grabar la llamada completa -->
+        <action application="set"
+          data="RECORD_FILE=/var/lib/freeswitch/recordings/${strftime(%Y%m%d_%H%M%S)}_${caller_id_number}.wav"/>
+        <action application="record_session"
+          data="${RECORD_FILE}"/>
+
+        <!-- Responder la llamada -->
+        <action application="answer"/>
+
+        <!-- Pequeña pausa para establecer audio -->
+        <action application="sleep" data="500"/>
+
+        <!-- Log de inicio de sesión -->
+        <action application="log" data="INFO [CallManager] Nueva llamada: ${caller_id_number} → AI Agent"/>
+
+        <!-- ── ACTIVAR STREAMING DE AUDIO AL ORCHESTRATOR IA ──────── -->
+        <!-- mod_audio_stream envía audio PCM por WebSocket al Orchestrator -->
+        <!-- El Orchestrator reenvía a Google STT → Gemini → Google TTS    -->
+        <action application="audio_stream"
+          data="${orchestrator_ws_url}/audio-stream?callId=${uuid}&amp;caller=${caller_id_number}&amp;lang=es-SV"/>
+
+        <!-- El Orchestrator controla la llamada via ESL (Event Socket) -->
+        <!-- Cuando Gemini decide escalar, envía un evento ESL que       -->
+        <!-- transfiere la llamada a la extensión del agente humano      -->
+
+        <!-- Timeout: si no hay respuesta del Orchestrator en X segundos -->
+        <action application="set" data="call_timeout=${ai_max_duration}"/>
+
+        <!-- Mantener la llamada activa mientras el bot responde -->
+        <action application="park"/>
+
+      </condition>
+    </extension>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         EXTENSIONES DE AGENTES HUMANOS (8000-8099)
+         El Orchestrator transfiere aquí cuando decide escalar
+         ════════════════════════════════════════════════════════════════ -->
+    <extension name="human_agents">
+      <condition field="destination_number" expression="^(80[0-9]{2})$">
+        <action application="log"
+          data="INFO [CallManager] Escalando a agente: ${destination_number} desde ${caller_id_number}"/>
+
+        <!-- Variables de contexto para el Agent Desktop -->
+        <!-- El Orchestrator las setea via ESL antes del transfer -->
+        <action application="export" data="X-AI-Brief=${X-AI-Brief}"/>
+        <action application="export" data="X-Session-Id=${X-Session-Id}"/>
+        <action application="export" data="X-Caller-Name=${X-Caller-Name}"/>
+
+        <!-- Música en espera mientras conecta con el agente -->
+        <action application="set" data="ringback=${hold_music}"/>
+
+        <!-- Bridge hacia el agente (WebRTC via Verto/JsSIP) -->
+        <action application="bridge" data="user/${destination_number}@${domain}"/>
+
+        <!-- Si el agente no contesta en 30s, volver a cola -->
+        <action application="transfer" data="agent_unavailable XML default"/>
+      </condition>
+    </extension>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         AGENTE NO DISPONIBLE — Fallback
+         ════════════════════════════════════════════════════════════════ -->
+    <extension name="agent_unavailable">
+      <condition field="destination_number" expression="^agent_unavailable$">
+        <action application="log" data="WARN [CallManager] Agente no disponible, re-encolando"/>
+        <!-- Reproducir mensaje y volver a parkear en cola general -->
+        <action application="playback"
+          data="phrase:holding_message"/>
+        <action application="transfer" data="7000 XML default"/>
+      </condition>
+    </extension>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         EXTENSIONES INTERNAS DE PRUEBA
+         ════════════════════════════════════════════════════════════════ -->
+    <extension name="echo_test">
+      <condition field="destination_number" expression="^9999$">
+        <action application="answer"/>
+        <action application="echo"/>
+      </condition>
+    </extension>
+
+    <extension name="tone_test">
+      <condition field="destination_number" expression="^9998$">
+        <action application="answer"/>
+        <action application="playback" data="tone_stream://%(2000,4000,440,480)"/>
+      </condition>
+    </extension>
+
+  </context>
+</include>

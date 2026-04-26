@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  vars.xml — Variables globales FreeSWITCH
+  Call Manager AI — Davivienda
+  Ajustar valores antes de arrancar FreeSWITCH
+-->
+<include>
+  <X-PRE-PROCESS cmd="set" data="domain=DOMAIN_PLACEHOLDER"/>
+  <X-PRE-PROCESS cmd="set" data="domain_name=$${domain}"/>
+
+  <!-- ── ORCHESTRATOR (Cloud Run) ─────────────────────────────────── -->
+  <!-- URL del Cloud Run donde corre el Orchestrator Node.js          -->
+  <!-- Formato: wss://orchestrator-xxxxx-uc.a.run.app                 -->
+  <X-PRE-PROCESS cmd="set" data="orchestrator_ws_url=ORCHESTRATOR_URL_PLACEHOLDER"/>
+
+  <!-- ── PUERTOS ───────────────────────────────────────────────────── -->
+  <X-PRE-PROCESS cmd="set" data="sip_port=5060"/>
+  <X-PRE-PROCESS cmd="set" data="tls_sip_port=5061"/>
+  <X-PRE-PROCESS cmd="set" data="verto_ws_port=5066"/>     <!-- JsSIP agentes -->
+  <X-PRE-PROCESS cmd="set" data="esl_port=8021"/>          <!-- Event Socket   -->
+
+  <!-- ── AUDIO ─────────────────────────────────────────────────────── -->
+  <!-- Codec principal. PCMU (G.711 μ-law) = máxima compatibilidad    -->
+  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=PCMU,PCMA,OPUS"/>
+  <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=PCMU,PCMA,OPUS"/>
+  <!-- Sample rate para STT de Google (requiere 8000 o 16000 Hz)      -->
+  <X-PRE-PROCESS cmd="set" data="audio_sample_rate=8000"/>
+
+  <!-- ── AGENTE IA — EXTENSIÓN VIRTUAL ────────────────────────────── -->
+  <!-- Extensión interna del bot IA. Las llamadas van aquí primero    -->
+  <X-PRE-PROCESS cmd="set" data="ai_agent_extension=7000"/>
+
+  <!-- ── MÚSICA EN ESPERA ──────────────────────────────────────────── -->
+  <X-PRE-PROCESS cmd="set" data="hold_music=local_stream://moh"/>
+
+  <!-- ── IDIOMA ─────────────────────────────────────────────────────── -->
+  <X-PRE-PROCESS cmd="set" data="default_language=es"/>
+  <X-PRE-PROCESS cmd="set" data="default_country=sv"/>  <!-- El Salvador -->
+
+  <!-- ── TIMEOUTS ──────────────────────────────────────────────────── -->
+  <!-- Segundos sin respuesta antes de colgar o escalar               -->
+  <X-PRE-PROCESS cmd="set" data="ai_silence_timeout=8"/>
+  <!-- Tiempo máximo de llamada con bot IA antes de escalar (segundos)-->
+  <X-PRE-PROCESS cmd="set" data="ai_max_duration=300"/>
+
+  <!-- ── GRABACIÓN ─────────────────────────────────────────────────── -->
+  <!-- Directorio donde se guardan las grabaciones                    -->
+  <X-PRE-PROCESS cmd="set" data="recordings_dir=/var/lib/freeswitch/recordings"/>
+  <X-PRE-PROCESS cmd="set" data="record_calls=true"/>
+
+  <!-- ── LOGS ──────────────────────────────────────────────────────── -->
+  <X-PRE-PROCESS cmd="set" data="console_loglevel=info"/>
+</include>
